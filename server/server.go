@@ -84,12 +84,24 @@ func (s *etcd_server) RequestETCD(ctx context.Context, in *pb.RequestMsg) (*pb.R
 		return &pb.ResponseMsg{Message: "Delete successfully."}, nil
 	}
 	if in.GetOperation() == "GetListValues" {
-
+		r, err := kv.Get(ctx, string(byte(0)), clientv3.WithRange(string(byte(0))))
+		if err != nil {
+			log.Fatalf("could not get: %v", err)
+		}
+		returnMessage := "["
+		for i := 0; i < len(r.Kvs)-1; i++ {
+			returnMessage += "'" + string(r.Kvs[i].Value) + "', "
+		}
+		returnMessage += "'" + string(r.Kvs[len(r.Kvs)-1].Value) + "']"
+		return &pb.ResponseMsg{Message: returnMessage}, nil
 	}
 	return &pb.ResponseMsg{Message: "Unknown type of operation " + in.GetOperation()}, nil
 }
 
 func main() {
+	if err != nil {
+		log.Fatalf("connect to etcd failed: %v", err)
+	}
 	flag.Parse()
 	/*
 		lis_greeting, err := net.Listen("tcp", fmt.Sprintf(":%d", *port))
@@ -107,9 +119,6 @@ func main() {
 	lis_etcd, err := net.Listen("tcp", fmt.Sprintf(":%d", *port+1))
 	if err != nil {
 		log.Fatalf("failed to listen: %v", err)
-	}
-	if err != nil {
-		log.Fatalf("connect to etcd failed: %v", err)
 	}
 	log.Printf("server listening at %v", lis_etcd.Addr())
 	s2 := grpc.NewServer()

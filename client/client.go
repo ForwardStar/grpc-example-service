@@ -94,4 +94,22 @@ func main() {
 	}
 	log.Printf("ETCD Server: %s", r4.GetMessage())
 
+	r5, err := c1.RequestETCD(ctx_etcd, &pb.RequestMsg{Operation: "SetKV", Key: "ask1", Value: "How are you?"})
+	if err != nil {
+		log.Fatalf("Error: %v", err)
+	}
+	log.Printf("ETCD Server: %s", r5.GetMessage())
+
+	r6, err := c1.RequestETCD(ctx_etcd, &pb.RequestMsg{Operation: "SetKV", Key: "answer1", Value: "I am fine. Thank you!"})
+	if err != nil {
+		log.Fatalf("Error: %v", err)
+	}
+	log.Printf("ETCD Server: %s", r6.GetMessage())
+
+	r7, err := c1.RequestETCD(ctx_etcd, &pb.RequestMsg{Operation: "GetListValues"})
+	if err != nil {
+		log.Fatalf("Error: %v", err)
+	}
+	log.Printf("ETCD Server: %s", r7.GetMessage())
+
 }
