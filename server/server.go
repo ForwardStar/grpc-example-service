@@ -36,7 +36,7 @@ import (
 var (
 	port     = flag.Int("port", 50051, "The server port")
 	cli, err = clientv3.New(clientv3.Config{
-		Endpoints:   []string{"http://127.0.0.1:2379"},
+		Endpoints:   []string{"http://127.0.0.1:2379", "http://127.0.0.1:2380"},
 		DialTimeout: 5 * time.Second,
 	})
 	kv = clientv3.NewKV(cli)

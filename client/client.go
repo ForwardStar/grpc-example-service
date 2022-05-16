@@ -49,7 +49,7 @@ type DummyInfo struct {
 	M int
 }
 
-func stringify(data any) string {
+func Stringify(data DummyInfo) string {
 
 	stringified_data, err := json.Marshal(data)
 	if err != nil {
@@ -60,7 +60,7 @@ func stringify(data any) string {
 
 }
 
-func destringify(data string) any {
+func Destringify(data string) any {
 
 	if len(data) > 0 && data[0] == '[' {
 		var stringified_data_list list.List
@@ -85,13 +85,13 @@ func destringify(data string) any {
 		for it := stringified_data_list.Front(); it != nil; it = it.Next() {
 			value, ok := it.Value.(string)
 			if ok {
-				destringified_data_list.PushBack(destringify(value))
+				destringified_data_list.PushBack(Destringify(value))
 			}
 		}
 		return destringified_data_list
 	}
 
-	var destringified_data any
+	var destringified_data DummyInfo
 
 	err := json.Unmarshal([]byte(data), &destringified_data)
 	if err != nil {
@@ -132,7 +132,7 @@ func main() {
 	ctx_etcd, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	r1, err := c1.RequestETCD(ctx_etcd, &pb.RequestMsg{Operation: "SetKV", Key: "greeting", Value: stringify(DummyInfo{
+	r1, err := c1.RequestETCD(ctx_etcd, &pb.RequestMsg{Operation: "SetKV", Key: "greeting", Value: Stringify(DummyInfo{
 		N: 6,
 		M: 9,
 	})})
@@ -147,7 +147,7 @@ func main() {
 	}
 	log.Printf("ETCD Server: %s", r2.GetMessage())
 
-	r3, err := c1.RequestETCD(ctx_etcd, &pb.RequestMsg{Operation: "SetKV", Key: "greet", Value: stringify(DummyInfo{
+	r3, err := c1.RequestETCD(ctx_etcd, &pb.RequestMsg{Operation: "SetKV", Key: "greet", Value: Stringify(DummyInfo{
 		N: 5,
 		M: 10,
 	})})
