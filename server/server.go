@@ -60,14 +60,14 @@ func (s *greeter_server) SayHello(ctx context.Context, in *pb.HelloRequest) (*pb
 func (s *etcd_server) RequestETCD(ctx context.Context, in *pb.RequestMsg) (*pb.ResponseMsg, error) {
 	log.Printf("Received request: %v", in.GetOperation())
 	if in.GetOperation() == "SetKV" {
-		_, err := kv.Put(ctx, in.GetKey(), in.GetValue())
+		_, err := kv.Put(ctx, "/mytest/"+in.GetKey(), in.GetValue())
 		if err != nil {
 			log.Fatalf("could not set: %v", err)
 		}
 		return &pb.ResponseMsg{Message: "Set successfully."}, nil
 	}
 	if in.GetOperation() == "GetKey" {
-		r, err := kv.Get(ctx, in.GetKey())
+		r, err := kv.Get(ctx, "/mytest/"+in.GetKey())
 		if err != nil {
 			log.Fatalf("could not get: %v", err)
 		}
@@ -77,7 +77,7 @@ func (s *etcd_server) RequestETCD(ctx context.Context, in *pb.RequestMsg) (*pb.R
 		return &pb.ResponseMsg{Message: string(r.Kvs[len(r.Kvs)-1].Value)}, nil
 	}
 	if in.GetOperation() == "DeleteKey" {
-		_, err := kv.Delete(ctx, in.GetKey())
+		_, err := kv.Delete(ctx, "/mytest/"+in.GetKey())
 		if err != nil {
 			log.Fatalf("could not delete: %v", err)
 		}
