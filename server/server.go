@@ -72,7 +72,7 @@ func (s *etcd_server) RequestETCD(ctx context.Context, in *pb.RequestMsg) (*pb.R
 			log.Fatalf("could not get: %v", err)
 		}
 		if len(r.Kvs) == 0 {
-			return &pb.ResponseMsg{Message: "Could not find key " + in.GetKey()}, nil
+			return &pb.ResponseMsg{Message: ""}, nil
 		}
 		return &pb.ResponseMsg{Message: string(r.Kvs[len(r.Kvs)-1].Value)}, nil
 	}
@@ -90,12 +90,12 @@ func (s *etcd_server) RequestETCD(ctx context.Context, in *pb.RequestMsg) (*pb.R
 		}
 		returnMessage := "["
 		for i := 0; i < len(r.Kvs)-1; i++ {
-			returnMessage += "'" + string(r.Kvs[i].Value) + "', "
+			returnMessage += string(r.Kvs[i].Value) + ", "
 		}
-		returnMessage += "'" + string(r.Kvs[len(r.Kvs)-1].Value) + "']"
+		returnMessage += string(r.Kvs[len(r.Kvs)-1].Value) + "]"
 		return &pb.ResponseMsg{Message: returnMessage}, nil
 	}
-	return &pb.ResponseMsg{Message: "Unknown type of operation " + in.GetOperation()}, nil
+	return &pb.ResponseMsg{Message: ""}, nil
 }
 
 func main() {
