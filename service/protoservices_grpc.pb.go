@@ -106,86 +106,194 @@ var Greeter_ServiceDesc = grpc.ServiceDesc{
 	Metadata: "service/protoservices.proto",
 }
 
-// ETCDClient is the client API for ETCD service.
+// ETCDWrapperClient is the client API for ETCDWrapper service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
-type ETCDClient interface {
-	RequestETCD(ctx context.Context, in *RequestMsg, opts ...grpc.CallOption) (*ResponseMsg, error)
+type ETCDWrapperClient interface {
+	SetKV(ctx context.Context, in *SetKVRequest, opts ...grpc.CallOption) (*SetKVResponse, error)
+	GetKey(ctx context.Context, in *GetKeyRequest, opts ...grpc.CallOption) (*GetKeyResponse, error)
+	DeleteKey(ctx context.Context, in *DeleteKeyRequest, opts ...grpc.CallOption) (*DeleteKeyResponse, error)
+	ListValues(ctx context.Context, in *ListValuesRequest, opts ...grpc.CallOption) (*ListValuesResponse, error)
 }
 
-type eTCDClient struct {
+type eTCDWrapperClient struct {
 	cc grpc.ClientConnInterface
 }
 
-func NewETCDClient(cc grpc.ClientConnInterface) ETCDClient {
-	return &eTCDClient{cc}
+func NewETCDWrapperClient(cc grpc.ClientConnInterface) ETCDWrapperClient {
+	return &eTCDWrapperClient{cc}
 }
 
-func (c *eTCDClient) RequestETCD(ctx context.Context, in *RequestMsg, opts ...grpc.CallOption) (*ResponseMsg, error) {
-	out := new(ResponseMsg)
-	err := c.cc.Invoke(ctx, "/service.ETCD/RequestETCD", in, out, opts...)
+func (c *eTCDWrapperClient) SetKV(ctx context.Context, in *SetKVRequest, opts ...grpc.CallOption) (*SetKVResponse, error) {
+	out := new(SetKVResponse)
+	err := c.cc.Invoke(ctx, "/service.ETCDWrapper/SetKV", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-// ETCDServer is the server API for ETCD service.
-// All implementations must embed UnimplementedETCDServer
+func (c *eTCDWrapperClient) GetKey(ctx context.Context, in *GetKeyRequest, opts ...grpc.CallOption) (*GetKeyResponse, error) {
+	out := new(GetKeyResponse)
+	err := c.cc.Invoke(ctx, "/service.ETCDWrapper/GetKey", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *eTCDWrapperClient) DeleteKey(ctx context.Context, in *DeleteKeyRequest, opts ...grpc.CallOption) (*DeleteKeyResponse, error) {
+	out := new(DeleteKeyResponse)
+	err := c.cc.Invoke(ctx, "/service.ETCDWrapper/DeleteKey", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *eTCDWrapperClient) ListValues(ctx context.Context, in *ListValuesRequest, opts ...grpc.CallOption) (*ListValuesResponse, error) {
+	out := new(ListValuesResponse)
+	err := c.cc.Invoke(ctx, "/service.ETCDWrapper/ListValues", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+// ETCDWrapperServer is the server API for ETCDWrapper service.
+// All implementations must embed UnimplementedETCDWrapperServer
 // for forward compatibility
-type ETCDServer interface {
-	RequestETCD(context.Context, *RequestMsg) (*ResponseMsg, error)
-	mustEmbedUnimplementedETCDServer()
+type ETCDWrapperServer interface {
+	SetKV(context.Context, *SetKVRequest) (*SetKVResponse, error)
+	GetKey(context.Context, *GetKeyRequest) (*GetKeyResponse, error)
+	DeleteKey(context.Context, *DeleteKeyRequest) (*DeleteKeyResponse, error)
+	ListValues(context.Context, *ListValuesRequest) (*ListValuesResponse, error)
+	mustEmbedUnimplementedETCDWrapperServer()
 }
 
-// UnimplementedETCDServer must be embedded to have forward compatible implementations.
-type UnimplementedETCDServer struct {
+// UnimplementedETCDWrapperServer must be embedded to have forward compatible implementations.
+type UnimplementedETCDWrapperServer struct {
 }
 
-func (UnimplementedETCDServer) RequestETCD(context.Context, *RequestMsg) (*ResponseMsg, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method RequestETCD not implemented")
+func (UnimplementedETCDWrapperServer) SetKV(context.Context, *SetKVRequest) (*SetKVResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SetKV not implemented")
 }
-func (UnimplementedETCDServer) mustEmbedUnimplementedETCDServer() {}
+func (UnimplementedETCDWrapperServer) GetKey(context.Context, *GetKeyRequest) (*GetKeyResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetKey not implemented")
+}
+func (UnimplementedETCDWrapperServer) DeleteKey(context.Context, *DeleteKeyRequest) (*DeleteKeyResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DeleteKey not implemented")
+}
+func (UnimplementedETCDWrapperServer) ListValues(context.Context, *ListValuesRequest) (*ListValuesResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListValues not implemented")
+}
+func (UnimplementedETCDWrapperServer) mustEmbedUnimplementedETCDWrapperServer() {}
 
-// UnsafeETCDServer may be embedded to opt out of forward compatibility for this service.
-// Use of this interface is not recommended, as added methods to ETCDServer will
+// UnsafeETCDWrapperServer may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to ETCDWrapperServer will
 // result in compilation errors.
-type UnsafeETCDServer interface {
-	mustEmbedUnimplementedETCDServer()
+type UnsafeETCDWrapperServer interface {
+	mustEmbedUnimplementedETCDWrapperServer()
 }
 
-func RegisterETCDServer(s grpc.ServiceRegistrar, srv ETCDServer) {
-	s.RegisterService(&ETCD_ServiceDesc, srv)
+func RegisterETCDWrapperServer(s grpc.ServiceRegistrar, srv ETCDWrapperServer) {
+	s.RegisterService(&ETCDWrapper_ServiceDesc, srv)
 }
 
-func _ETCD_RequestETCD_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(RequestMsg)
+func _ETCDWrapper_SetKV_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SetKVRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(ETCDServer).RequestETCD(ctx, in)
+		return srv.(ETCDWrapperServer).SetKV(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/service.ETCD/RequestETCD",
+		FullMethod: "/service.ETCDWrapper/SetKV",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ETCDServer).RequestETCD(ctx, req.(*RequestMsg))
+		return srv.(ETCDWrapperServer).SetKV(ctx, req.(*SetKVRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-// ETCD_ServiceDesc is the grpc.ServiceDesc for ETCD service.
+func _ETCDWrapper_GetKey_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetKeyRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ETCDWrapperServer).GetKey(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/service.ETCDWrapper/GetKey",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ETCDWrapperServer).GetKey(ctx, req.(*GetKeyRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ETCDWrapper_DeleteKey_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeleteKeyRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ETCDWrapperServer).DeleteKey(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/service.ETCDWrapper/DeleteKey",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ETCDWrapperServer).DeleteKey(ctx, req.(*DeleteKeyRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ETCDWrapper_ListValues_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListValuesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ETCDWrapperServer).ListValues(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/service.ETCDWrapper/ListValues",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ETCDWrapperServer).ListValues(ctx, req.(*ListValuesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+// ETCDWrapper_ServiceDesc is the grpc.ServiceDesc for ETCDWrapper service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
-var ETCD_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "service.ETCD",
-	HandlerType: (*ETCDServer)(nil),
+var ETCDWrapper_ServiceDesc = grpc.ServiceDesc{
+	ServiceName: "service.ETCDWrapper",
+	HandlerType: (*ETCDWrapperServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "RequestETCD",
-			Handler:    _ETCD_RequestETCD_Handler,
+			MethodName: "SetKV",
+			Handler:    _ETCDWrapper_SetKV_Handler,
+		},
+		{
+			MethodName: "GetKey",
+			Handler:    _ETCDWrapper_GetKey_Handler,
+		},
+		{
+			MethodName: "DeleteKey",
+			Handler:    _ETCDWrapper_DeleteKey_Handler,
+		},
+		{
+			MethodName: "ListValues",
+			Handler:    _ETCDWrapper_ListValues_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

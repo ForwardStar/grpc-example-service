@@ -20,9 +20,7 @@
 package main
 
 import (
-	"container/list"
 	"context"
-	"encoding/json"
 	"flag"
 	"log"
 	"time"
@@ -42,65 +40,6 @@ var (
 	addr_etcd     = flag.String("addr_etcd", "localhost:50052", "the address to connect to")
 	name          = flag.String("name", defaultName, "Name to greet")
 )
-
-// Replace DummyInfo with any struct
-type DummyInfo struct {
-	N int
-	M int
-}
-
-func Stringify(data DummyInfo) string {
-
-	stringified_data, err := json.Marshal(data)
-	if err != nil {
-		log.Fatalf("Error: %v", err)
-	}
-
-	return string(stringified_data)
-
-}
-
-func Destringify(data string) any {
-
-	if len(data) > 0 && data[0] == '[' {
-		var stringified_data_list list.List
-		in_json := false
-		cut := ""
-		for i := 1; i < len(data)-1; i++ {
-			if data[i] == '{' {
-				in_json = true
-				cut += string(data[i])
-				continue
-			}
-			if in_json {
-				cut += string(data[i])
-			}
-			if in_json && data[i] == '}' {
-				in_json = false
-				stringified_data_list.PushBack(cut)
-				cut = ""
-			}
-		}
-		var destringified_data_list list.List
-		for it := stringified_data_list.Front(); it != nil; it = it.Next() {
-			value, ok := it.Value.(string)
-			if ok {
-				destringified_data_list.PushBack(Destringify(value))
-			}
-		}
-		return destringified_data_list
-	}
-
-	var destringified_data DummyInfo
-
-	err := json.Unmarshal([]byte(data), &destringified_data)
-	if err != nil {
-		log.Fatalf("Error: %v", err)
-	}
-
-	return destringified_data
-
-}
 
 func main() {
 	flag.Parse()
@@ -124,57 +63,67 @@ func main() {
 		log.Printf("Greeting: %s", r.GetMessage())
 	*/
 
-	conn_etcd, err := grpc.Dial(*addr_etcd, grpc.WithTransportCredentials(insecure.NewCredentials()))
-	defer conn_etcd.Close()
+	connEtcd, err := grpc.Dial(*addr_etcd, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	defer connEtcd.Close()
 
-	c1 := pb.NewETCDClient(conn_etcd)
+	c1 := pb.NewETCDWrapperClient(connEtcd)
 
-	ctx_etcd, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	ctxEtcd, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	r1, err := c1.RequestETCD(ctx_etcd, &pb.RequestMsg{Operation: "SetKV", Key: "greeting", Value: Stringify(DummyInfo{
+	var Values string
+
+	r1, err := c1.SetKV(ctxEtcd, &pb.SetKVRequest{Key: "greeting", Value: &pb.DummyInfo{
 		N: 6,
 		M: 9,
-	})})
+	}})
 	if err != nil {
 		log.Fatalf("Error: %v", err)
 	}
 	log.Printf("ETCD Server: %s", r1.GetMessage())
 
-	r2, err := c1.RequestETCD(ctx_etcd, &pb.RequestMsg{Operation: "GetKey", Key: "greeting"})
+	r2, err := c1.GetKey(ctxEtcd, &pb.GetKeyRequest{Key: "greeting"})
 	if err != nil {
 		log.Fatalf("Error: %v", err)
 	}
-	log.Printf("ETCD Server: %s", r2.GetMessage())
+	log.Printf("ETCD Server: %v", r2.GetValue().String())
 
-	r3, err := c1.RequestETCD(ctx_etcd, &pb.RequestMsg{Operation: "SetKV", Key: "greet", Value: Stringify(DummyInfo{
+	r3, err := c1.SetKV(ctxEtcd, &pb.SetKVRequest{Key: "greet", Value: &pb.DummyInfo{
 		N: 5,
 		M: 10,
-	})})
+	}})
 	if err != nil {
 		log.Fatalf("Error: %v", err)
 	}
 	log.Printf("ETCD Server: %s", r3.GetMessage())
 
-	r4, err := c1.RequestETCD(ctx_etcd, &pb.RequestMsg{Operation: "GetListValues"})
+	r4, err := c1.ListValues(ctxEtcd, &pb.ListValuesRequest{})
 	if err != nil {
 		log.Fatalf("Error: %v", err)
 	}
-	log.Printf("ETCD Server: %s", r4.GetMessage())
+	Values = ""
+	for i := 0; i < len(r4.Values); i++ {
+		Values += r4.Values[i].String() + " "
+	}
+	log.Printf("ETCD Server: %s", Values)
 
-	r5, err := c1.RequestETCD(ctx_etcd, &pb.RequestMsg{Operation: "DeleteKey", Key: "greeting"})
+	r5, err := c1.DeleteKey(ctxEtcd, &pb.DeleteKeyRequest{Key: "greeting"})
 	if err != nil {
 		log.Fatalf("Error: %v", err)
 	}
 	log.Printf("ETCD Server: %s", r5.GetMessage())
 
-	r6, err := c1.RequestETCD(ctx_etcd, &pb.RequestMsg{Operation: "GetListValues"})
+	r6, err := c1.ListValues(ctxEtcd, &pb.ListValuesRequest{})
 	if err != nil {
 		log.Fatalf("Error: %v", err)
 	}
-	log.Printf("ETCD Server: %s", r6.GetMessage())
+	Values = ""
+	for i := 0; i < len(r6.Values); i++ {
+		Values += r6.Values[i].String() + " "
+	}
+	log.Printf("ETCD Server: %s", Values)
 
-	r7, err := c1.RequestETCD(ctx_etcd, &pb.RequestMsg{Operation: "DeleteKey", Key: "greet"})
+	r7, err := c1.DeleteKey(ctxEtcd, &pb.DeleteKeyRequest{Key: "greet"})
 	if err != nil {
 		log.Fatalf("Error: %v", err)
 	}

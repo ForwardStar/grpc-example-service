@@ -34,6 +34,13 @@ go run server/server.go
 go run client/client.go
 ```
 
+## Regenerate gRPC Code
+```sh
+protoc --go_out=. --go_opt=paths=source_relative \
+    --go-grpc_out=. --go-grpc_opt=paths=source_relative \
+    service/protoservices.proto
+```
+
 ## Database APIs
 
 You can do database management in ``client/client.go``.

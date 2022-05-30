@@ -21,6 +21,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"flag"
 	"fmt"
 	"log"
@@ -43,59 +44,82 @@ var (
 )
 
 // server is used to implement helloworld.GreeterServer.
-type greeter_server struct {
+type greeterServer struct {
 	pb.UnimplementedGreeterServer
 }
 
-type etcd_server struct {
-	pb.UnimplementedETCDServer
+type etcdServer struct {
+	pb.UnimplementedETCDWrapperServer
 }
 
 // SayHello implements helloworld.GreeterServer
-func (s *greeter_server) SayHello(ctx context.Context, in *pb.HelloRequest) (*pb.HelloReply, error) {
+func (s *greeterServer) SayHello(ctx context.Context, in *pb.HelloRequest) (*pb.HelloReply, error) {
 	log.Printf("Received: %v", in.GetName())
 	return &pb.HelloReply{Message: "Hello " + in.GetName()}, nil
 }
 
-func (s *etcd_server) RequestETCD(ctx context.Context, in *pb.RequestMsg) (*pb.ResponseMsg, error) {
-	log.Printf("Received request: %v", in.GetOperation())
-	if in.GetOperation() == "SetKV" {
-		_, err := kv.Put(ctx, "/mytest/"+in.GetKey(), in.GetValue())
-		if err != nil {
-			log.Fatalf("could not set: %v", err)
-		}
-		return &pb.ResponseMsg{Message: "Set successfully."}, nil
+func (s *etcdServer) SetKV(ctx context.Context, in *pb.SetKVRequest) (*pb.SetKVResponse, error) {
+	log.Printf("Received request: SetKV, Key: " + in.GetKey() + ", Value: " + in.GetValue().String())
+	jsonBytes, err := json.Marshal(in.GetValue())
+	if err != nil {
+		log.Fatalf("Could not encode: %v", err)
 	}
-	if in.GetOperation() == "GetKey" {
-		r, err := kv.Get(ctx, "/mytest/"+in.GetKey())
-		if err != nil {
-			log.Fatalf("could not get: %v", err)
-		}
-		if len(r.Kvs) == 0 {
-			return &pb.ResponseMsg{Message: ""}, nil
-		}
-		return &pb.ResponseMsg{Message: string(r.Kvs[len(r.Kvs)-1].Value)}, nil
+	_, err = kv.Put(ctx, "/mytest/"+in.GetKey(), string(jsonBytes))
+	if err != nil {
+		log.Fatalf("Could not set: %v", err)
 	}
-	if in.GetOperation() == "DeleteKey" {
-		_, err := kv.Delete(ctx, "/mytest/"+in.GetKey())
-		if err != nil {
-			log.Fatalf("could not delete: %v", err)
-		}
-		return &pb.ResponseMsg{Message: "Delete successfully."}, nil
+	return &pb.SetKVResponse{Message: "OK"}, nil
+}
+
+func (s *etcdServer) GetKey(ctx context.Context, in *pb.GetKeyRequest) (*pb.GetKeyResponse, error) {
+	log.Printf("Received request: GetKey, Key: " + in.GetKey())
+	rawData, err := kv.Get(ctx, "/mytest/"+in.GetKey())
+	if err != nil {
+		log.Fatalf("Could not get: %v", err)
 	}
-	if in.GetOperation() == "GetListValues" {
-		r, err := kv.Get(ctx, string(byte(0)), clientv3.WithRange(string(byte(0))))
-		if err != nil {
-			log.Fatalf("could not get: %v", err)
+	if len(rawData.Kvs) > 0 {
+		var value pb.DummyInfo
+		errorMsg := json.Unmarshal(rawData.Kvs[len(rawData.Kvs)-1].Value, &value)
+		if errorMsg != nil {
+			log.Printf("Could not decode: %v", errorMsg)
 		}
-		returnMessage := "["
-		for i := 0; i < len(r.Kvs)-1; i++ {
-			returnMessage += string(r.Kvs[i].Value) + ", "
-		}
-		returnMessage += string(r.Kvs[len(r.Kvs)-1].Value) + "]"
-		return &pb.ResponseMsg{Message: returnMessage}, nil
+		return &pb.GetKeyResponse{Value: &value}, nil
+	} else {
+		return &pb.GetKeyResponse{Value: nil}, nil
 	}
-	return &pb.ResponseMsg{Message: ""}, nil
+}
+
+func (s *etcdServer) DeleteKey(ctx context.Context, in *pb.DeleteKeyRequest) (*pb.DeleteKeyResponse, error) {
+	log.Printf("Received request: DeleteKey")
+	_, err := kv.Delete(ctx, "/mytest/"+in.GetKey())
+	if err != nil {
+		log.Fatalf("Could not delete: %v", err)
+	}
+	return &pb.DeleteKeyResponse{Message: "OK"}, nil
+}
+
+func (s *etcdServer) ListValues(ctx context.Context, in *pb.ListValuesRequest) (*pb.ListValuesResponse, error) {
+	log.Printf("Received request: GetListValues")
+	rawData, err := kv.Get(ctx, "/mytest/", clientv3.WithPrefix())
+	if err != nil {
+		log.Fatalf("Could not get: %v", err)
+	}
+	if len(rawData.Kvs) > 0 {
+		values := make([]pb.DummyInfo, len(rawData.Kvs))
+		valuePointers := make([]*pb.DummyInfo, len(rawData.Kvs))
+		for i := range values {
+			valuePointers[i] = &values[i]
+		}
+		for i := range rawData.Kvs {
+			errorMsg := json.Unmarshal(rawData.Kvs[i].Value, valuePointers[i])
+			if errorMsg != nil {
+				log.Printf("Could not decode: %v", errorMsg)
+			}
+		}
+		return &pb.ListValuesResponse{Values: valuePointers}, nil
+	} else {
+		return &pb.ListValuesResponse{Values: nil}, nil
+	}
 }
 
 func main() {
@@ -122,7 +146,7 @@ func main() {
 	}
 	log.Printf("server listening at %v", lis_etcd.Addr())
 	s2 := grpc.NewServer()
-	pb.RegisterETCDServer(s2, &etcd_server{})
+	pb.RegisterETCDWrapperServer(s2, &etcdServer{})
 	if err := s2.Serve(lis_etcd); err != nil {
 		log.Fatalf("failed to serve: %v", err)
 	}

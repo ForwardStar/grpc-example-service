@@ -21,11 +21,19 @@ package service;
 // The greeting service definition.
 service Greeter {
   // Sends a greeting
-  rpc SayHello (HelloRequest) returns (HelloReply) {}
+  rpc SayHello ( HelloRequest ) returns ( HelloReply ) {}
 }
 
-service ETCD {
-  rpc RequestETCD (RequestMsg) returns (ResponseMsg) {}
+service ETCDWrapper {
+  rpc SetKV ( SetKVRequest ) returns ( SetKVResponse ) {}
+  rpc GetKey ( GetKeyRequest ) returns ( GetKeyResponse ) {}
+  rpc DeleteKey ( DeleteKeyRequest ) returns ( DeleteKeyResponse ) {}
+  rpc ListValues ( ListValuesRequest ) returns ( ListValuesResponse ) {}
+}
+
+message DummyInfo {
+  int64 m = 1;
+  int64 n = 2;
 }
 
 // The request message containing the user's name.
@@ -38,12 +46,35 @@ message HelloReply {
   string message = 1;
 }
 
-message RequestMsg {
-  string operation = 1;
-  string key = 2;
-  string value = 3;
+message SetKVRequest {
+  string key = 1;
+  DummyInfo value = 2;
 }
 
-message ResponseMsg {
+message SetKVResponse {
   string message = 1;
+}
+
+message GetKeyRequest {
+  string key = 1;
+}
+
+message GetKeyResponse {
+  DummyInfo value = 1;
+}
+
+message DeleteKeyRequest {
+  string key = 1;
+}
+
+message DeleteKeyResponse {
+  string message = 1;
+}
+
+message ListValuesRequest {
+
+}
+
+message ListValuesResponse {
+  repeated DummyInfo values = 1;
 }
